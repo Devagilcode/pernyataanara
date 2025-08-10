@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pernyataan & Tanda Tangan</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f0f2f5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+    .card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        max-width: 400px;
+        width: 100%;
+        text-align: center;
+    }
+    h2 {
+        margin-bottom: 10px;
+    }
+    canvas {
+        border: 1px solid #ccc;
+        margin-top: 10px;
+        width: 100%;
+        height: 150px;
+        cursor: crosshair;
+    }
+    .signature-name {
+        margin-top: 5px;
+        font-weight: bold;
+        font-family: 'Poppins', sans-serif;
+        font-size: 14px;
+        color: #444;
+    }
+    button {
+        background: #25d366;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        margin-top: 15px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+    button:hover {
+        background: #1ebd5f;
+    }
+    #typingText {
+        font-family: 'Poppins', sans-serif;
+        font-size: 16px;
+        font-weight: 600;
+        color: #222;
+        letter-spacing: 0.5px;
+        white-space: pre-line;
+        text-align: left;
+    }
+</style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Pernyataan</h2>
+    <p id="typingText"></p>
+
+    <canvas id="signaturePad"></canvas>
+    <div class="signature-name">(Denia Ara Cely Ramadhania)</div>
+
+    <button id="okBtn">OK</button>
+</div>
+
+<!-- Audio otomatis -->
+<audio id="bgMusic" autoplay loop>
+    <source src="penjaga.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+// ==== Efek mengetik teks ====
+const text = `Dengan ini saya menyatakan bahwa saya tidak akan memblokir semua kontak yang dapat dihubungi oleh pacar saya lagi, dan saya akan menjelaskan jika pacar saya ovt dan cemburu pada suatu hal. Saya bertanda tangan di bawah ini dengan sadar menandatangani surat ini.`;
+let index = 0;
+function typeWriter() {
+    if (index < text.length) {
+        document.getElementById("typingText").innerHTML += text.charAt(index);
+        index++;
+        setTimeout(typeWriter, 40);
+    }
+}
+typeWriter();
+
+// ==== Setup signature pad ====
+const canvas = document.getElementById('signaturePad');
+const ctx = canvas.getContext('2d');
+canvas.width = canvas.offsetWidth;
+canvas.height = canvas.offsetHeight;
+
+let drawing = false;
+function getPos(evt) {
+    let rect = canvas.getBoundingClientRect();
+    let clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+    let clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+    return { x: clientX - rect.left, y: clientY - rect.top };
+}
+function startDraw(e) {
+    drawing = true;
+    ctx.beginPath();
+    let pos = getPos(e);
+    ctx.moveTo(pos.x, pos.y);
+    e.preventDefault();
+}
+function endDraw() { drawing = false; }
+function draw(e) {
+    if (!drawing) return;
+    let pos = getPos(e);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    e.preventDefault();
+}
+canvas.addEventListener('mousedown', startDraw);
+canvas.addEventListener('mouseup', endDraw);
+canvas.addEventListener('mousemove', draw);
+canvas.addEventListener('touchstart', startDraw);
+canvas.addEventListener('touchend', endDraw);
+canvas.addEventListener('touchmove', draw);
+
+// ==== Autoplay audio workaround ====
+const music = document.getElementById('bgMusic');
+document.addEventListener('click', () => {
+    music.play().catch(err => console.log('Autoplay diblokir browser.'));
+}, { once: true });
+
+// ==== Kirim ke WhatsApp ====
+document.getElementById('okBtn').addEventListener('click', () => {
+    let signatureData = canvas.toDataURL();
+    let now = new Date();
+    let tanggal = now.getDate().toString().padStart(2, '0');
+    let bulan = (now.getMonth() + 1).toString().padStart(2, '0');
+    let tahun = now.getFullYear();
+    let jam = now.getHours().toString().padStart(2, '0');
+    let menit = now.getMinutes().toString().padStart(2, '0');
+    let waktu = `${tanggal}-${bulan}-${tahun} ${jam}:${menit}`;
+    let pesan = `Saya Denia Ara Cely Ramadhania setuju dengan pernyataan ini dan ini valid saya tidak akan memblokir semua kontak yang dapat dihubungi oleh pacar saya lagi.\nWaktu: ${waktu}`;
+    let url = `https://wa.me/6285175385357?text=${encodeURIComponent(pesan)}`;
+    window.open(url, '_blank');
+});
+</script>
+
+</body>
+</html>
